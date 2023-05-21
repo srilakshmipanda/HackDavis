@@ -1,4 +1,4 @@
-# Safe Zone Hack Davis 2023
+# SafeZone Hack Davis 2023
 
 In light of recent events that took place in Davis, we realized that our community was in need of a way to communicate effectively with eachother in order to keep each other safe. In those hard times students were forced to rely on police radios and scanners for updates on the events happening around them. Social media simply wasn't enough to keep track of all the locations over Davis to stay away from and not everyone was properly alerted of the attacks and events taking place.
 
