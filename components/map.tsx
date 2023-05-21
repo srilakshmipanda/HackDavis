@@ -1,5 +1,5 @@
 //import { useState, useMemo, useCallback, useRef } from "react";
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, SetStateAction } from "react";
 import L, * as LatLngLiteral from "leaflet";
 import { Dropdown } from "./Dropdown";
 import {
@@ -10,15 +10,15 @@ import {
     MarkerClusterer,
 } from "@react-google-maps/api";
 import Places from "./places";
-import Distance from "./distance";
+//import Distance from "./distance";
 import { addDoc, collection, getDocs } from "firebase/firestore";
 import { db } from '../pages/firebase';
 import { xa } from "./Dropdown";
+import { url } from "inspector";
 
 type LatLngLiteral = google.maps.LatLngLiteral;
 type DirectionsResult = google.maps.DirectionsResult;
 type MapOptions = google.maps.MapOptions;
-
 
 const addNewDocument = async (position: LatLngLiteral, crime: String
 ) => {
@@ -41,6 +41,18 @@ function clickMe(position: LatLngLiteral, crimeType: String) {
 }
 
 const locations: Array<LatLngLiteral> = [];
+
+const iconBlue = {
+    url: "https://storage.googleapis.com/support-kms-prod/SNP_2752068_en_v0", // url
+    //scaledSize: new google.maps.Size(11, 11), // scaled size
+};
+// const iconYellow = {
+//     url: "https://storage.googleapis.com/support-kms-prod/SNP_2752063_en_v0", // url
+//     scaledSize: new google.maps.Size(11, 11), // scaled size
+// };
+
+
+
 
 export default function Map() {
     const [office, setOffice] = useState<LatLngLiteral | undefined>(undefined);
@@ -75,11 +87,6 @@ export default function Map() {
 
     generatePoints();
 
-    const iconOption = {
-        url: '~/Documents/HackDavis/redDot.png',
-        size: 10
-    }
-
     const dropdownoptions = [
         { value: "Theft", label: "Theft" },
         { value: "Assault", label: "Assault" },
@@ -87,22 +94,12 @@ export default function Map() {
         { value: "Other", label: "Other" },
     ];
 
+    var circle = {
+        path: google.maps.SymbolPath.CIRCLE,
+        fillColor: "#E3C565",
+        scale: 10.5
+    };
 
-    // useEffect(() => {
-    //     const locations: Array<LatLngLiteral> = [];
-
-    //     const querySnapshot = await getDocs(collection(db, "susLocation"));
-    //     querySnapshot.forEach((doc) => {
-    //         const data = doc.data();
-    //         const x = data.lat;
-    //         const y = data.lng;
-
-    //         locations.push({
-    //             lat: x,
-    //             lng: y,
-    //         });
-    //     });
-    // }, []);
 
     interface CircleIconProps {
         color: string;
@@ -131,7 +128,7 @@ export default function Map() {
             <div className="controls">
                 <p className="header">HACKDAVIS 2023</p>
                 <hr className="line" />
-                <p className="title">AM I SAFE</p>
+                <p className="title">SafeZone</p>
                 <p className="description">Use this web application to report occurrences of suspicious activity and view the safety of the area you plan to travel to before doing so. Stay safe and contribute to keeping your community safe. </p>
                 <Places
                     setOffice={(position) => {
@@ -139,26 +136,26 @@ export default function Map() {
                         mapRef.current?.panTo(position);
                     }}
                 />
-                {!office && <p>Enter the location of the suspicious activity.</p>}
-                {directions && <Distance leg={directions.routes[0].legs[0]} />}
-                <Dropdown placeHolder="Select..." dropdownoptions={dropdownoptions} />
                 <br></br>
+                <Dropdown placeHolder="Select..." dropdownoptions={dropdownoptions} />
                 <br></br>
                 <button
                     className="my-button"
                     onClick={() => {
                         clickMe(location, xa);
                     }}>
-                    Add a location with suspicious acitivty
+                    Add Location
                 </button>
                 <br></br>
                 <br></br>
                 <br></br>
-                <br></br>
-                <CircleIcon color="yellow" text="Theft" />
-                <CircleIcon color="amber" text="Assault" />
-                <CircleIcon color="orange" text="Violence" />
-                <CircleIcon color="red" text="Other" />
+                <div className="circlecontainer">
+                    <p>Thefts: {totalThefts}</p>
+                    <p>Assaults: {totalAssaults}</p>
+                    <p>Violence: {totalViolences}</p>
+                    <p>Other: {other}</p>
+                </div>
+
             </div>
 
             <div className="map">
@@ -169,16 +166,19 @@ export default function Map() {
                     options={options}
                     onLoad={onLoad}
                 >
+                    <Marker
+                        position={center}
+                    />
 
                     {office && (
                         <>
                             <Marker
-                                position={center}
+                                position={office}
                             />
 
                             <Circle center={center} radius={1000} options={closeOptions} />
-                            //<Circle center={center} radius={1500} options={closeOptions} />
-                            //<Circle center={center} radius={2000} options={closeOptions} />
+                            <Circle center={center} radius={1500} options={middleOptions} />
+                            <Circle center={center} radius={2000} options={farOptions} />
                         </>
                     )}
 
@@ -186,7 +186,7 @@ export default function Map() {
                         <Marker
                             key={index}
                             position={location}
-                        //icon="../Icons/redDot.png"
+                            icon="https://storage.googleapis.com/support-kms-prod/SNP_2752068_en_v0"
                         />
                     ))}
 
@@ -208,29 +208,31 @@ const closeOptions = {
     ...defaultOptions,
     zIndex: 3,
     fillOpacity: 0.07,
-    strokeColor: "#8BC34A",
-    fillColor: "#8BC34A",
+    strokeColor: "#151E3d", //"#8BC34A",
+    fillColor: "#0492C2", //"#8BC34A",
 };
 const middleOptions = {
     ...defaultOptions,
     zIndex: 2,
     fillOpacity: 0.07,
-    strokeColor: "#FBC02D",
-    fillColor: "#FBC02D",
+    strokeColor: "#1F456E",//"#FBC02D",
+    fillColor: "#1520A6",
 };
 const farOptions = {
     ...defaultOptions,
     zIndex: 1,
     fillOpacity: 0.07,
-    strokeColor: "#FF5252",
-    fillColor: "#FF5252",
+    strokeColor: "#59788E", //"#FF5252",
+    fillColor: "##1338BE",
 
 };
 
+let totalThefts = 0;
+let totalAssaults = 0;
+let totalViolences = 0;
+let other = 0;
 
 const generatePoints = async () => {
-    const _susLocs: Array<LatLngLiteral> = [];
-
     const querySnapshot = await getDocs(collection(db, "susLocation"));
     querySnapshot.forEach((doc) => {
         const data = doc.data();
@@ -241,56 +243,20 @@ const generatePoints = async () => {
             lat: x,
             lng: y,
         });
+
+
+        if (data.crimeType == "Theft") {
+            totalThefts = totalThefts + 1;
+        }
+        else if (data.crimeType == "Assault") {
+            totalAssaults++;
+        }
+        else if (data.crimeType == "Violence") {
+            totalViolences++;
+        } else if (data.crimeType == "Other") {
+            other++;
+        }
+
     });
+
 };
-
-/*const generatePoints = async () => {
-    const _susLocs: Array<LatLngLiteral> = [];
-
-    const querySnapshot = await getDocs(collection(db, "susLocation"));
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        const x = data.lat;
-        const y = data.lng;
-
-        _susLocs.push({
-            lat: x,
-            lng: y,
-        });
-
-        // const curData: LatLngLiteral = {
-        //     lat: x,
-        //     lng: y
-        // };
-
-        // //<Marker
-        // //  position={curData}
-        // ///>
-        // {
-        //     location && (
-        //         <>
-        //             <Marker
-        //                 position={curData}
-        //             />
-        //         </>
-        //     )
-        // }
-
-        susLoc.map((loc) => (
-                            <Marker
-                                position={loc}
-                            />))
-
-        console.log(`${doc.id} => ${doc.data()}`);
-        console.log(x, y);
-    });
-
-    return _susLocs;
-};*/
-
-// const getDocumentCount = async () => {
-//     const querySnapshot = await getDocs(collection(db, 'susLocation'));
-//     const count = querySnapshot.size;
-//     console.log('Number of documents:', count);
-//     return count;
-// };

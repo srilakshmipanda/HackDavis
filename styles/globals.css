@@ -52,7 +52,7 @@ a {
 }
 
 .my-button {
-    background-color: azure;
+    background-color: white;
     color: #333;
     padding: 10px 20px;
     border: none;
@@ -106,8 +106,35 @@ a {
 }
 
 .header {
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: 700;
+    font-family: 'Arial';
+    font-weight: 600;
 }
 
-.title {}
+.hr {
+    padding-top: 8px;
+}
+
+.title {
+    font-family: Arial Black;
+    font-weight: 900;
+    font-size: x-large;
+}
+
+.description {
+    font-size: small;
+    font-family: Arial;
+    font-weight: 200;
+    padding-bottom: 20px;
+}
+
+.button {
+    padding-top: 5px;
+}
+
+
+
+.circlecontainer {
+    width: 100px;
+    height: 100px;
+    font-size: small;
+}
