@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import * as LatLngLiteral from "leaflet";
-import * as L from "leaflet";
-import axios from 'axios';
+//import * as L from "leaflet";
+//import axios from 'axios';
 import Dropdown from "./Dropdown";
 
 
@@ -14,15 +14,39 @@ import {
 } from "@react-google-maps/api";
 import Places from "./places";
 import Distance from "./distance";
+import { addDoc, collection } from "firebase/firestore";
+import { db } from '../pages/firebase';
 
 type LatLngLiteral = google.maps.LatLngLiteral;
 type DirectionsResult = google.maps.DirectionsResult;
 type MapOptions = google.maps.MapOptions;
 
+const addNewDocument = async (position: LatLngLiteral
+  ) => {
+      try {
+          const docRef = await addDoc(collection(db, "susLocation"), {
+              lat: position.lat,
+              lng: position.lng,
+              crimeType: "Theft",
+          });
+  
+          console.log("Document written with ID: ", docRef.id);
+      } catch (e) {
+          console.error("Error adding document: ", e);
+      }
+  };
+  
+  function clickMe(position: LatLngLiteral) {
+      addNewDocument(position);
+      alert('Your response has been submitted!');
+  }  
+
 export default function Map() {
   const [office, setOffice] = useState<LatLngLiteral>();
   const [directions, setDirections] = useState<DirectionsResult>();
   const mapRef = useRef<GoogleMap>();
+  let [location, setLocation] = useState<LatLngLiteral>({ lat: 0, lng: 0 });
+  location = office as LatLngLiteral;
   /*const center = useMemo<LatLngLiteral>(
     () => ({ lat: 43.45, lng: -80.49 }),
     []
@@ -34,8 +58,6 @@ export default function Map() {
       setCenter({ lat: latitude, lng: longitude });
     });
   }, []);
-  
-
   const options = useMemo<MapOptions>(
     () => ({
       mapId: "50b6b3b1d1c6cb1b",
@@ -68,23 +90,37 @@ export default function Map() {
   const dropdownoptions = [
     { value: "Theft", label: "Theft" },
     { value: "Assault", label: "Assault" },
+    { value: "Other", label: "Other" },
   ];
 
   return (
     <div className="container">
       <div className="controls">
-        <h1>Am I Safe?</h1>
+        <p className="header">HACKDAVIS 2023</p>
+        <hr className="line" />
+        <p className="title">AM I SAFE</p>
+        <p className="description">Use this web application to report occurrences of suspicious activity and view the safety of the area you plan to travel to before doing so. Stay safe and contribute to keeping your community safe. </p>
         <Places
           setOffice={(position) => {
             setOffice(position);
             mapRef.current?.panTo(position);
           }}
         />
-        {!office && <p>Enter the location of the suspicious activity.</p>}
+        {!office && <p>Enter location of suspicious activity.</p>}
         {directions && <Distance leg={directions.routes[0].legs[0]} />}
-        <Dropdown placeHolder="Select..." dropdownoptions={dropdownoptions}/>
+        <Dropdown placeHolder="Choose description of suspicious activity" dropdownoptions={dropdownoptions}/>
+        <br></br>
+        <br></br>
+        <button
+            className="my-button"
+            onClick={() => {
+              clickMe(location);
+            }}>
+            Add a location with suspicious acitivty
+          </button>
       </div>
       
+
       <div className="map">
         <GoogleMap
           zoom={10}
@@ -112,20 +148,12 @@ export default function Map() {
                 position={office}
               />
 
-              <MarkerClusterer>
-                {(clusterer) =>
-                  houses.map((house) => (
-                    <Marker
-                      key={house.lat}
-                      position={house}
-                      clusterer={clusterer}
-                      onClick={() => {
-                        fetchDirections(house);
-                      }}
-                    />
-                  ))
-                }
-              </MarkerClusterer>
+             
+
+              <Circle center={office} radius={15000} options={closeOptions} />
+              <Circle center={office} radius={30000} options={middleOptions} />
+              <Circle center={office} radius={45000} options={farOptions} />
+            
             </>
           )}
         </GoogleMap>
@@ -141,6 +169,27 @@ const defaultOptions = {
   draggable: false,
   editable: false,
   visible: true,
+};
+const closeOptions = {
+  ...defaultOptions,
+  zIndex: 3,
+  fillOpacity: 0.05,
+  strokeColor: "#8BC34A",
+  fillColor: "#8BC34A",
+};
+const middleOptions = {
+  ...defaultOptions,
+  zIndex: 2,
+  fillOpacity: 0.05,
+  strokeColor: "#FBC02D",
+  fillColor: "#FBC02D",
+};
+const farOptions = {
+  ...defaultOptions,
+  zIndex: 1,
+  fillOpacity: 0.05,
+  strokeColor: "#FF5252",
+  fillColor: "#FF5252",
 };
 
 const generateHouses = (position: LatLngLiteral) => {
